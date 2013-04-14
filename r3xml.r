@@ -6,9 +6,9 @@ REBOL [
 	Purpose: "XML handler for Rebol v3"
 	Comment: http://www.ross-gill.com/page/XML_and_REBOL
 	Date: 22-Oct-2009
-	Version: 0.3.0
+	Version: 0.4.0
 	Type: 'module
-	History: [0.3.0 16-Feb-2013]
+	History: [0.3.0 16-Feb-2013 0.4.0 14-Apr-2013]
 	Exports: [load-xml decode-xml]
 ]
 
@@ -57,7 +57,7 @@ load-xml: use [
 	space entity text name attribute element header content
 ][
 	xml!: context [
-		name: space: value: tree: branch: position: none
+		this: name: space: value: tree: branch: position: none
 
 		flatten: use [xml path emit encode form-name element attribute tag attr text][
 			path: copy []
@@ -194,6 +194,68 @@ load-xml: use [
 			hits
 		]
 
+		path: func [path [block! path!] /local result selector kids][
+			unless parse path [some ['* [tag! | issue!] | tag! | issue! | integer!] opt '?][
+				do make error! "Invalid Path Spec"
+			]
+
+			result: :this
+
+			unless parse path [
+				opt [tag! (either result/name = path/1 [result: compose [(any [:result []])]][result: none])]
+
+				any [
+					selector:
+					['* [tag! | issue!]]
+					(
+						kids: collect [
+							foreach kid compose [(any [:result []])][
+								keep kid
+							]
+						]
+
+						result: collect [
+							foreach kid kids [
+								keep kid/get-by-tag selector/2
+							]
+						]
+					)
+					|
+					[tag! | issue!] (
+						kids: collect [
+							foreach kid compose [(any [:result []])] [
+								keep kid/attributes
+								keep kid/children
+							]
+						]
+
+						remove-each kid kids [not selector/1 = kid/name]
+						result: :kids
+					)
+					|
+					integer! (
+						result: pick compose [(any [:result []])] selector/1
+					)
+				]
+
+				opt [
+					'? (
+						case [
+							block? result [
+								kids: copy :result
+								result: collect [foreach kid kids [keep/only kid/value]]
+							]
+							object? result [
+								result: result/value
+							]
+						]
+					)
+				]
+			][do make error! rejoin ["Error at: " mold selector]]
+
+			result
+		]
+
 		attributes: has [hits hit][
 			hits: copy []
 			parse either block? value [value][[]] [
@@ -268,13 +330,14 @@ load-xml: use [
 	]
 
 	make-node: func [here /base][
-		make either base [doc][xml!][
+		here: make either base [doc][xml!][
 			position: here
-			name: here/1
+			name: here/1/1
 			space: all [path? name not head? name pick head name 1]
 			value: here/2
 			tree: reduce [name value]
 		]
+		here/this: here
 	]
 
 	space: use [space][
