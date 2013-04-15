@@ -33,7 +33,8 @@ word: use [w1 w+][
 decode-xml: use [nm hx ns entity char][
 	nm: charset "0123456789"
 	hx: charset "0123456789abcdefABCDEF"
-	ns: make map! ["lt" 60 "gt" 62 "amp" 38 "quot" 34 "apos" 39]
+	ns: make map! ["lt" 60 "gt" 62 "amp" 38 "quot" 34 "apos" 39 "nbsp" 160]
+	; nbsp is not in the XML spec but is still commonly found in XML
 
 	entity: [
 		"&" [ ; should be #"&"
@@ -332,10 +333,11 @@ load-xml: use [
 	make-node: func [here /base][
 		here: make either base [doc][xml!][
 			position: here
-			name: here/1/1
+			name: here/1
 			space: all [path? name not head? name pick head name 1]
 			value: here/2
 			tree: reduce [name value]
+			name: name/1
 		]
 		here/this: here
 	]
