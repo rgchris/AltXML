@@ -6,7 +6,7 @@ REBOL [
 	Purpose: "XML handler for Rebol v3"
 	Comment: http://www.ross-gill.com/page/XML_and_REBOL
 	Date: 22-Oct-2009
-	Version: 0.4.0
+	Version: 0.4.1
 	Type: 'module
 	History: [0.3.0 16-Feb-2013 0.4.0 14-Apr-2013]
 	Exports: [load-xml decode-xml]
@@ -316,7 +316,7 @@ load-xml: use [
 			tag/1: to-tag tag/1
 			while [tag <> position/1][
 				probe reform ["No End Tag:" position/1]
-				if empty? branch [make error! "End tag error!"]
+				if empty? branch [do make error! "End tag error!"]
 				take branch
 			]
 			tree: position: take branch
